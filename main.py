@@ -2,6 +2,12 @@ from time import time
 from fastapi import FastAPI, __version__
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+import os
+from groq import Groq
+
+groq_key = os.getenv("GROQ_KEY")
+
+client = Groq(api_key=groq_key)
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -41,3 +47,22 @@ async def april():
 @app.get('/ping')
 async def hello():
     return {'res': 'pong', 'version': __version__, "time": time()}
+
+@app.get('/chat/{message}')
+def groq(message):
+    chat_completion = client.chat.completions.create(
+    messages=[
+         {
+            "role": "system",
+            "content": "You are a bank helpline assistant, you job is to provide cstomers instruction about activating ATM card. You need to ask question about like are you using an ATM machine or mobile app for activating the card and then guide accordengly. "
+        },
+        {
+            "role": "user",
+            "content": message,
+        }
+    ],
+    model="llama3-8b-8192",
+)
+
+    #print(chat_completion.choices[0].message.content)
+    return str(chat_completion.choices[0].message.content)
